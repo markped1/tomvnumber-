@@ -77,6 +77,7 @@ router.post('/sms', async (req, res) => {
   if (to && from && body) {
     const number = await prisma.virtualNumber.findFirst({
       where: { number: to, active: true },
+      include: { user: true },
     });
 
     if (number) {
@@ -92,6 +93,21 @@ router.post('/sms', async (req, res) => {
           numberId: number.id,
         },
       }).catch(() => {});
+
+      // Forward SMS to user's real phone number if set
+      if (number.user.forwardingNumber) {
+        try {
+          const telnyx = (await import('telnyx')).default;
+          const client = new telnyx(process.env.TELNYX_API_KEY);
+          await client.messages.create({
+            from: to, // send from the virtual number
+            to: number.user.forwardingNumber,
+            text: `📨 From ${from}:\n${body}`,
+          });
+        } catch (e) {
+          console.error('SMS forward failed:', e.message);
+        }
+      }
     }
   }
 
