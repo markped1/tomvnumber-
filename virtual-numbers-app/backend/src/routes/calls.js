@@ -7,6 +7,20 @@ const router = Router();
 const prisma = new PrismaClient();
 const telnyx = new Telnyx(process.env.TELNYX_API_KEY);
 
+// Generate Telnyx WebRTC credential token for browser calling
+router.get('/token', authenticate, async (req, res) => {
+  try {
+    // Return SIP credentials for WebRTC client
+    res.json({
+      login: process.env.TELNYX_SIP_USERNAME,
+      password: process.env.TELNYX_SIP_PASSWORD,
+      callerIdNumber: null, // will be set per call
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Make outbound call
 router.post('/outbound', authenticate, async (req, res) => {
   const { to, fromNumberId } = req.body;
