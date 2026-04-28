@@ -8,6 +8,7 @@ import smsRoutes from './routes/sms.js';
 import paymentRoutes from './routes/payments.js';
 import webhookRoutes from './routes/webhooks.js';
 import adminRoutes from './routes/admin.js';
+import profileRoutes from './routes/profile.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/calls', callRoutes);
 app.use('/sms', smsRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/admin', adminRoutes);
+app.use('/profile', profileRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

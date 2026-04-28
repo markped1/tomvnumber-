@@ -18,6 +18,7 @@ router.post('/voice', async (req, res) => {
 
     const number = await prisma.virtualNumber.findFirst({
       where: { number: to, active: true },
+      include: { user: true },
     });
 
     if (number) {
@@ -32,6 +33,22 @@ router.post('/voice', async (req, res) => {
           numberId: number.id,
         },
       }).catch(() => {});
+
+      // If user has a forwarding number, forward the call
+      if (number.user.forwardingNumber) {
+        try {
+          const telnyx = (await import('telnyx')).default;
+          const client = new telnyx(process.env.TELNYX_API_KEY);
+          await client.calls.create({
+            connection_id: process.env.TELNYX_CONNECTION_ID,
+            to: number.user.forwardingNumber,
+            from: from,
+            webhook_url: `${process.env.BASE_URL}/webhooks/voice`,
+          });
+        } catch (e) {
+          console.error('Forward call failed:', e.message);
+        }
+      }
     }
   }
 

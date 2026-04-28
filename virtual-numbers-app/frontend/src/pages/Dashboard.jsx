@@ -8,13 +8,16 @@ export default function Dashboard() {
   const [numbers, setNumbers] = useState([]);
   const [topupAmount, setTopupAmount] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [forwardingNumber, setForwardingNumber] = useState('');
+  const [forwardingSaved, setForwardingSaved] = useState(false);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchNumbers();
     fetchBalance();
+    fetchProfile();
     if (searchParams.get('topup') === 'success') {
-      setTimeout(fetchBalance, 2000); // give webhook time to process
+      setTimeout(fetchBalance, 2000);
     }
   }, []);
 
@@ -26,6 +29,17 @@ export default function Dashboard() {
   const fetchBalance = async () => {
     const { data } = await api.get('/payments/balance');
     updateBalance(data.balance);
+  };
+
+  const fetchProfile = async () => {
+    const { data } = await api.get('/profile');
+    setForwardingNumber(data.forwardingNumber || '');
+  };
+
+  const saveForwarding = async () => {
+    await api.patch('/profile/forwarding', { forwardingNumber });
+    setForwardingSaved(true);
+    setTimeout(() => setForwardingSaved(false), 3000);
   };
 
   const handleTopup = async () => {
@@ -70,6 +84,23 @@ export default function Dashboard() {
           <h3 style={s.cardTitle}>Your Numbers</h3>
           <p style={s.bigNum}>{numbers.filter(n => n.active).length}</p>
           <Link to="/buy" style={s.linkBtn}>+ Buy New Number</Link>
+        </div>
+
+        {/* Call Forwarding */}
+        <div style={s.card}>
+          <h3 style={s.cardTitle}>📲 Call Forwarding</h3>
+          <p style={{ color: '#4ade80', fontSize: 13, marginBottom: 8 }}>
+            Inbound calls will ring your real phone number
+          </p>
+          <input
+            style={s.select}
+            placeholder="e.g. +2348012345678"
+            value={forwardingNumber}
+            onChange={e => setForwardingNumber(e.target.value)}
+          />
+          <button style={{ ...s.btn, marginTop: 8 }} onClick={saveForwarding}>
+            {forwardingSaved ? '✅ Saved!' : 'Save'}
+          </button>
         </div>
       </div>
 
